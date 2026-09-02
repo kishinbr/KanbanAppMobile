@@ -3,6 +3,7 @@ import '../models/quadro_detalhe.dart';
 import '../services/quadro_service.dart';
 import '../services/coluna_service.dart';
 import '../services/cartao_service.dart';
+import '../models/cartao.dart';
 
 class VerQuadroScreen extends StatefulWidget {
   final int quadroId;
@@ -109,6 +110,70 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
       }
     }
   }
+  Future<void> _abrirDialogoEditarCartao(Cartao cartao) async {
+    final tituloController = TextEditingController(text: cartao.titulo);
+    final descricaoController =
+        TextEditingController(text: cartao.descricao ?? '');
+
+    final resultado = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Editar cartão'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: tituloController,
+                decoration: const InputDecoration(labelText: 'Título'),
+                autofocus: true,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descricaoController,
+                decoration: const InputDecoration(labelText: 'Descrição'),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, {
+                'titulo': tituloController.text,
+                'descricao': descricaoController.text,
+              }),
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (resultado != null && resultado['titulo']!.trim().isNotEmpty) {
+      try {
+        await _cartaoService.editar(
+          cartao.id,
+          resultado['titulo']!.trim(),
+          resultado['descricao']?.trim().isEmpty ?? true
+              ? null
+              : resultado['descricao'],
+        );
+        setState(() {
+          _detalheFuture = _quadroService.verDetalhes(widget.quadroId);
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$e'.replaceAll('Exception: ', ''))),
+          );
+        }
+      }
+    }
+  }
 
 
   @override
@@ -168,20 +233,39 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
                               }
 
                               final cartao = colunaComCartoes.cartoes[cartaoIndex];
-                              return Container(
-                                width: 140,
-                                margin: const EdgeInsets.only(right: 8),
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  cartao.titulo,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              );
+                                return GestureDetector(
+                                  onTap: () => _abrirDialogoEditarCartao(cartao),
+                                  child: Container(
+                                    width: 140,
+                                    margin: const EdgeInsets.only(right: 8),
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          cartao.titulo,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                        if (cartao.descricao != null && cartao.descricao!.isNotEmpty) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            cartao.descricao!,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(fontSize: 12),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                );
                             },
                           ),
                         ),

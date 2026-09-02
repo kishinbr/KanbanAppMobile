@@ -31,4 +31,23 @@ class CartaoService {
       throw Exception('Erro ao criar o cartão');
     }
   }
+    Future<void> editar(int cartaoId, String titulo, String? descricao) async {
+    final token = await _storageService.obterToken();
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/$cartaoId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'titulo': titulo,
+        'descricao': descricao,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao editar o cartão');
+    }
+  }
 }
