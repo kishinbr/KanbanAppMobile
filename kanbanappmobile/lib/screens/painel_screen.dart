@@ -3,6 +3,7 @@ import '../models/quadro.dart';
 import '../services/quadro_service.dart';
 import '../services/storage_service.dart';
 import 'login_screen.dart';
+import 'ver_quadro_screen.dart';
 
 class PainelScreen extends StatefulWidget {
   const PainelScreen({super.key});
@@ -174,7 +175,12 @@ class _PainelScreenState extends State<PainelScreen> {
                   ),
                   trailing: Text(quadro.codigoCompartilhamento),
                   onTap: () {
-                    // Depois vamos navegar para a tela de detalhes do quadro
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VerQuadroScreen(quadroId: quadro.id),
+                      ),
+                    );
                   },
                 );
               },

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/quadro.dart';
 import 'storage_service.dart';
+import '../models/quadro_detalhe.dart';
 
 class QuadroService {
   static const String baseUrl =
@@ -61,6 +62,23 @@ class QuadroService {
     if (response.statusCode != 200) {
       final json = jsonDecode(response.body);
       throw Exception(json['mensagem'] ?? 'Erro ao entrar no kanban');
+    }
+  }
+  Future<QuadroDetalhe> verDetalhes(int quadroId) async {
+    final token = await _storageService.obterToken();
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/$quadroId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return QuadroDetalhe.fromJson(json);
+    } else {
+      throw Exception('Erro ao carregar o quadro');
     }
   }
 }
