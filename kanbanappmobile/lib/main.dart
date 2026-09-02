@@ -1,16 +1,27 @@
 import 'package:flutter/material.dart';
+import 'screens/login_screen.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(const KanbanApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class KanbanApp extends StatelessWidget {
+  const KanbanApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(body: Center(child: Text('Hello World!'))),
+    return MaterialApp(
+      title: 'Kanban App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.cyan,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      home: const LoginScreen(),
     );
   }
 }
