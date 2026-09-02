@@ -77,6 +77,49 @@ class _PainelScreenState extends State<PainelScreen> {
       }
     }
   }
+  Future<void> _abrirDialogoEntrarComCodigo() async {
+    final codigoController = TextEditingController();
+
+    final codigo = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Entrar com código'),
+          content: TextField(
+            controller: codigoController,
+            decoration: const InputDecoration(labelText: 'Código do Kanban'),
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, codigoController.text),
+              child: const Text('Entrar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (codigo != null && codigo.trim().isNotEmpty) {
+      try {
+        await _quadroService.entrar(codigo.trim());
+        setState(() {
+          _quadrosFuture = _quadroService.listar();
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$e'.replaceAll('Exception: ', ''))),
+          );
+        }
+      }
+    }
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -84,6 +127,11 @@ class _PainelScreenState extends State<PainelScreen> {
       appBar: AppBar(
         title: const Text('Meus Kanbans'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.group_add),
+            onPressed: _abrirDialogoEntrarComCodigo,
+            tooltip: 'Entrar com código',
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _fazerLogout,
