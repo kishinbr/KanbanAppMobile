@@ -66,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
+        child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -103,10 +104,9 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
-                  Navigator.pushAndRemoveUntil(
+                  Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const PainelScreen()),
-                  (route) => false,
+                  MaterialPageRoute(builder: (context) => const CadastroScreen()),
                 );
                 },
                 child: const Text('Não tem conta? Cadastre-se!!'),
@@ -114,6 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
