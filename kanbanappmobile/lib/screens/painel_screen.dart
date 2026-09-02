@@ -34,6 +34,49 @@ class _PainelScreenState extends State<PainelScreen> {
       );
     }
   }
+
+  Future<void> _abrirDialogoCriarKanban() async {
+    final nomeController = TextEditingController();
+
+    final nome = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Criar novo Kanban'),
+          content: TextField(
+            controller: nomeController,
+            decoration: const InputDecoration(labelText: 'Nome do Kanban'),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, nomeController.text),
+              child: const Text('Criar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (nome != null && nome.trim().isNotEmpty) {
+      try {
+        await _quadroService.criar(nome.trim());
+        setState(() {
+          _quadrosFuture = _quadroService.listar();
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e')),
+          );
+        }
+      }
+    }
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -65,23 +108,36 @@ class _PainelScreenState extends State<PainelScreen> {
             return const Center(child: Text('Você ainda não tem nenhum kanban.'));
           }
 
-          return ListView.builder(
-            itemCount: quadros.length,
-            itemBuilder: (context, index) {
-              final quadro = quadros[index];
-              return ListTile(
-                title: Text(quadro.nome),
-                subtitle: Text(
-                  quadro.papel == 'dono' ? 'Você é o dono' : 'Espectador',
-                ),
-                trailing: Text(quadro.codigoCompartilhamento),
-                onTap: () {
-                  // Depois vamos navegar para a tela de detalhes do quadro
-                },
-              );
+          return RefreshIndicator(
+            onRefresh: () async {
+              setState(() {
+                _quadrosFuture = _quadroService.listar();
+              });
+              await _quadrosFuture;
             },
+            child: ListView.builder(
+              itemCount: quadros.length,
+              itemBuilder: (context, index) {
+                final quadro = quadros[index];
+                return ListTile(
+                  title: Text(quadro.nome),
+                  subtitle: Text(
+                    quadro.papel == 'dono' ? 'Você é o dono' : 'Espectador',
+                  ),
+                  trailing: Text(quadro.codigoCompartilhamento),
+                  onTap: () {
+                    // Depois vamos navegar para a tela de detalhes do quadro
+                  },
+                );
+              },
+            ),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _abrirDialogoCriarKanban,
+        tooltip: 'Criar novo Kanban',
+        child: const Icon(Icons.add),
       ),
     );
   }
