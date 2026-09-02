@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/storage_service.dart';
+import 'painel_screen.dart';
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({super.key});
@@ -13,11 +15,20 @@ class _CadastroScreenState extends State<CadastroScreen> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   final _authService = AuthService();
+  final _storageService = StorageService();
 
   bool _carregando = false;
   String? _erro;
 
   Future<void> _fazerCadastro() async {
+    if (_nomeController.text.trim().isEmpty ||
+      _emailController.text.trim().isEmpty ||
+      _senhaController.text.trim().isEmpty) {
+      setState(() {
+        _erro = 'Preencha todos os campos.';
+      });
+      return;
+    }
     setState(() {
       _carregando = true;
       _erro = null;
@@ -30,9 +41,18 @@ class _CadastroScreenState extends State<CadastroScreen> {
         _senhaController.text,
       );
 
+      await _storageService.salvarSessao(
+        token: usuario.token,
+        nome: usuario.nome,
+        email: usuario.email,
+        usuarioId: usuario.id,
+      );
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cadastro OK! Bem-vindo, ${usuario.nome}')),
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const PainelScreen()),
+          (route) => false,
         );
       }
     } catch (e) {
@@ -51,6 +71,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Criar Conta')),
       body: Center(
+        child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -87,6 +108,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

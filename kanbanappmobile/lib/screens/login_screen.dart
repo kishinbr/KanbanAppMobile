@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'cadastro_screen.dart';
+import '../services/storage_service.dart';
+import 'painel_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,11 +15,19 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   final _authService = AuthService();
+  final _storageService = StorageService();
 
   bool _carregando = false;
   String? _erro;
 
   Future<void> _fazerLogin() async {
+    if (_emailController.text.trim().isEmpty ||
+      _senhaController.text.trim().isEmpty) {
+      setState(() {
+        _erro = 'Preencha email e senha.';
+      });
+      return;
+    }
     setState(() {
       _carregando = true;
       _erro = null;
@@ -29,11 +39,16 @@ class _LoginScreenState extends State<LoginScreen> {
         _senhaController.text,
       );
 
-      // Por enquanto, só confirmamos que funcionou.
-      // Depois vamos navegar para a tela do Painel.
+      await _storageService.salvarSessao(
+        token: usuario.token,
+        nome: usuario.nome,
+        email: usuario.email,
+        usuarioId: usuario.id,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login OK! Bem-vindo, ${usuario.nome}')),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const PainelScreen()),
         );
       }
     } catch (e) {
@@ -71,6 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _senhaController,
                 decoration: const InputDecoration(labelText: 'Senha'),
                 obscureText: true,
+                keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 24),
               if (_erro != null)
@@ -87,10 +103,11 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CadastroScreen()),
-                  );
+                  Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PainelScreen()),
+                  (route) => false,
+                );
                 },
                 child: const Text('Não tem conta? Cadastre-se!!'),
               ),
