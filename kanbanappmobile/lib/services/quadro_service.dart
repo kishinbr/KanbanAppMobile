@@ -81,4 +81,33 @@ class QuadroService {
       throw Exception('Erro ao carregar o quadro');
     }
   }
+  Future<void> sair(int quadroId) async {
+    final token = await _storageService.obterToken();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/$quadroId/sair'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      final json = jsonDecode(response.body);
+      throw Exception(json['mensagem'] ?? 'Erro ao sair do kanban');
+    }
+  }
+  Future<void> excluir(int quadroId) async {
+    final token = await _storageService.obterToken();
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/$quadroId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao excluir o kanban');
+    }
+  }
 }

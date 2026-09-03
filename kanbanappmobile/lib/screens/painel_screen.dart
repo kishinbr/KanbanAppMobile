@@ -174,13 +174,19 @@ class _PainelScreenState extends State<PainelScreen> {
                     quadro.papel == 'dono' ? 'Você é o dono' : 'Espectador',
                   ),
                   trailing: Text(quadro.codigoCompartilhamento),
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final atualizou = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => VerQuadroScreen(quadroId: quadro.id),
                       ),
                     );
+
+                    if (atualizou == true) {
+                      setState(() {
+                        _quadrosFuture = _quadroService.listar();
+                      });
+                    }
                   },
                 );
               },

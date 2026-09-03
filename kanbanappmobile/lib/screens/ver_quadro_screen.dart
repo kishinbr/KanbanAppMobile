@@ -311,7 +311,84 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
     }
   }
 
+  Future<void> _confirmarSairDoKanban() async {
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Sair do Kanban'),
+          content: const Text(
+            'Tem certeza que deseja sair? Você vai perder o acesso a este kanban.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Sair'),
+            ),
+          ],
+        );
+      },
+    );
 
+    if (confirmou == true) {
+      try {
+        await _quadroService.sair(widget.quadroId);
+        if (mounted) {
+          Navigator.pop(context,true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$e'.replaceAll('Exception: ', ''))),
+          );
+        }
+      }
+    }
+  }
+  Future<void> _confirmarExclusaoQuadro() async {
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Excluir Kanban'),
+          content: const Text(
+            'Tem certeza que deseja EXCLUIR este kanban? Todas as colunas, cartões e o acesso de todos os participantes serão perdidos permanentemente.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmou == true) {
+      try {
+        await _quadroService.excluir(widget.quadroId);
+        if (mounted) {
+          Navigator.pop(context,true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$e'.replaceAll('Exception: ', ''))),
+          );
+        }
+      }
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -330,7 +407,23 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
           final ehDono = detalhe.papel == 'dono';
 
           return Scaffold(
-            appBar: AppBar(title: Text(detalhe.quadro.nome)),
+            appBar: AppBar(
+              title: Text(detalhe.quadro.nome),
+              actions: [
+                if (!ehDono)
+                  IconButton(
+                    icon: const Icon(Icons.exit_to_app),
+                    onPressed: _confirmarSairDoKanban,
+                    tooltip: 'Sair do Kanban',
+                  ),
+                if (ehDono)
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: _confirmarExclusaoQuadro,
+                    tooltip: 'Excluir Kanban',
+                  ),
+              ],
+            ),
             body: ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: detalhe.colunas.length,
