@@ -464,7 +464,14 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
                   ),
               ],
             ),
-            body: ListView.builder(
+            body:RefreshIndicator(
+              onRefresh: () async {
+                setState(() {
+                  _detalheFuture = _quadroService.verDetalhes(widget.quadroId);
+                });
+                await _detalheFuture;
+              },   
+              child:ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: detalhe.colunas.length,
               itemBuilder: (context, index) {
@@ -564,6 +571,7 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
               );
             },
           ),
+        ),
 
             floatingActionButton: ehDono
               ? FloatingActionButton(
