@@ -69,6 +69,7 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
       }
     }
   }
+  
   Future<void> _abrirDialogoCriarCartao(int colunaId) async {
     final tituloController = TextEditingController();
 
@@ -111,6 +112,7 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
       }
     }
   }
+  
   Future<void> _abrirDialogoEditarCartao(Cartao cartao) async {
     final tituloController = TextEditingController(text: cartao.titulo);
     final descricaoController =
@@ -183,6 +185,7 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
       }
     }
   }
+  
   Future<void> _abrirDialogoEditarColuna(Coluna coluna) async {
     final nomeController = TextEditingController(text: coluna.nome);
 
@@ -273,6 +276,7 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
       }
     }
   }
+ 
   Future<void> _confirmarExclusaoCartao(Cartao cartao) async {
     final confirmou = await showDialog<bool>(
       context: context,
@@ -350,6 +354,7 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
       }
     }
   }
+  
   Future<void> _confirmarExclusaoQuadro() async {
     final confirmou = await showDialog<bool>(
       context: context,
@@ -389,6 +394,41 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
       }
     }
   }
+  
+  Widget _construirCartaoVisual(Cartao cartao) {
+    return Container(
+      width: 140,
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            cartao.titulo,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          if (cartao.descricao != null && cartao.descricao!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              cartao.descricao!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+  
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -429,88 +469,102 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
               itemCount: detalhe.colunas.length,
               itemBuilder: (context, index) {
                 final colunaComCartoes = detalhe.colunas[index];
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                          onTap: ehDono ? () => _abrirDialogoEditarColuna(colunaComCartoes.coluna) : null,
-                          child: Text(
-                            colunaComCartoes.coluna.nome,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                  return DragTarget<Cartao>(
+                    onWillAcceptWithDetails: (details) => ehDono,
+                    onAcceptWithDetails: (details) async {
+                      final cartaoMovido = details.data;
+                      if (cartaoMovido.colunaId == colunaComCartoes.coluna.id) {
+                        return;
+                      }
+                      try {
+                        await _cartaoService.mover(
+                          cartaoMovido.id,
+                          colunaComCartoes.coluna.id,
+                          colunaComCartoes.cartoes.length,
+                        );
+                        setState(() {
+                          _detalheFuture = _quadroService.verDetalhes(widget.quadroId);
+                        });
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('$e'.replaceAll('Exception: ', ''))),
+                          );
+                        }
+                      }
+                    },
+                    builder: (context, candidateData, rejectedData) {
+                      final destacado = candidateData.isNotEmpty;
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: ehDono ? () => _abrirDialogoEditarColuna(colunaComCartoes.coluna) : null,
+                            child: Text(
+                              colunaComCartoes.coluna.nome,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          height: 100,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: colunaComCartoes.cartoes.length + 1,
-                            itemBuilder: (context, cartaoIndex) {
-                              if (cartaoIndex == colunaComCartoes.cartoes.length) {
-                                if (!ehDono) {
-                                  return const SizedBox.shrink();
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 100,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: colunaComCartoes.cartoes.length + 1,
+                              itemBuilder: (context, cartaoIndex) {
+                                if (cartaoIndex == colunaComCartoes.cartoes.length) {
+                                  if (!ehDono) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Center(
+                                    child: IconButton(
+                                      icon: const Icon(Icons.add_circle_outline),
+                                      onPressed: () =>
+                                          _abrirDialogoCriarCartao(colunaComCartoes.coluna.id),
+                                      tooltip: 'Novo cartão',
+                                    ),
+                                  );
                                 }
-                                return Center(
-                                  child: IconButton(
-                                    icon: const Icon(Icons.add_circle_outline),
-                                    onPressed: () =>
-                                        _abrirDialogoCriarCartao(colunaComCartoes.coluna.id),
-                                    tooltip: 'Novo cartão',
-                                  ),
-                                );
-                              }
 
-                              final cartao = colunaComCartoes.cartoes[cartaoIndex];
-                                return GestureDetector(
-                                  onTap: ehDono ? () => _abrirDialogoEditarCartao(cartao) : null,
-                                  child: Container(
-                                    width: 140,
-                                    margin: const EdgeInsets.only(right: 8),
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          cartao.titulo,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontWeight: FontWeight.bold),
-                                        ),
-                                        if (cartao.descricao != null && cartao.descricao!.isNotEmpty) ...[
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            cartao.descricao!,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(fontSize: 12),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
+                                final cartao = colunaComCartoes.cartoes[cartaoIndex];
+                                final cartaoWidget = _construirCartaoVisual(cartao);
+
+                                if (!ehDono) {
+                                  return cartaoWidget;
+                                }
+
+                                return LongPressDraggable<Cartao>(
+                                  data: cartao,
+                                  feedback: Material(
+                                    color: Colors.transparent,
+                                    child: Opacity(opacity: 0.8, child: cartaoWidget),
+                                  ),
+                                  childWhenDragging: Opacity(opacity: 0.3, child: cartaoWidget),
+                                  child: GestureDetector(
+                                    onTap: () => _abrirDialogoEditarCartao(cartao),
+                                    child: cartaoWidget,
                                   ),
                                 );
-                            },
+                                  
+                                },
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              );
+            },
+          ),
+
             floatingActionButton: ehDono
               ? FloatingActionButton(
                   onPressed: _abrirDialogoCriarColuna,
