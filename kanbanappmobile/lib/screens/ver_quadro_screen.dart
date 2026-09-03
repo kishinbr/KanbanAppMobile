@@ -327,6 +327,7 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
           }
 
           final detalhe = snapshot.data!;
+          final ehDono = detalhe.papel == 'dono';
 
           return Scaffold(
             appBar: AppBar(title: Text(detalhe.quadro.nome)),
@@ -344,7 +345,7 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         GestureDetector(
-                          onTap: () => _abrirDialogoEditarColuna(colunaComCartoes.coluna),
+                          onTap: ehDono ? () => _abrirDialogoEditarColuna(colunaComCartoes.coluna) : null,
                           child: Text(
                             colunaComCartoes.coluna.nome,
                             style: const TextStyle(
@@ -361,6 +362,9 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
                             itemCount: colunaComCartoes.cartoes.length + 1,
                             itemBuilder: (context, cartaoIndex) {
                               if (cartaoIndex == colunaComCartoes.cartoes.length) {
+                                if (!ehDono) {
+                                  return const SizedBox.shrink();
+                                }
                                 return Center(
                                   child: IconButton(
                                     icon: const Icon(Icons.add_circle_outline),
@@ -373,7 +377,7 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
 
                               final cartao = colunaComCartoes.cartoes[cartaoIndex];
                                 return GestureDetector(
-                                  onTap: () => _abrirDialogoEditarCartao(cartao),
+                                  onTap: ehDono ? () => _abrirDialogoEditarCartao(cartao) : null,
                                   child: Container(
                                     width: 140,
                                     margin: const EdgeInsets.only(right: 8),
@@ -414,11 +418,13 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
                 );
               },
             ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: _abrirDialogoCriarColuna,
-              tooltip: 'Nova coluna',
-              child: const Icon(Icons.add),
-            ),
+            floatingActionButton: ehDono
+              ? FloatingActionButton(
+                  onPressed: _abrirDialogoCriarColuna,
+                  tooltip: 'Nova coluna',
+                  child: const Icon(Icons.add),
+                )
+              : null,
           );
         },
       ),
