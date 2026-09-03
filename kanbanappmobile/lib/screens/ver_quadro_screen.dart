@@ -4,6 +4,7 @@ import '../services/quadro_service.dart';
 import '../services/coluna_service.dart';
 import '../services/cartao_service.dart';
 import '../models/cartao.dart';
+import '../models/coluna.dart';
 
 class VerQuadroScreen extends StatefulWidget {
   final int quadroId;
@@ -138,6 +139,14 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
           ),
           actions: [
             TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _confirmarExclusaoCartao(cartao);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Excluir'),
+            ),
+            TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancelar'),
             ),
@@ -162,6 +171,133 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
               ? null
               : resultado['descricao'],
         );
+        setState(() {
+          _detalheFuture = _quadroService.verDetalhes(widget.quadroId);
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$e'.replaceAll('Exception: ', ''))),
+          );
+        }
+      }
+    }
+  }
+  Future<void> _abrirDialogoEditarColuna(Coluna coluna) async {
+    final nomeController = TextEditingController(text: coluna.nome);
+
+    final resultado = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Editar coluna'),
+          content: TextField(
+            controller: nomeController,
+            decoration: const InputDecoration(labelText: 'Nome da coluna'),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _confirmarExclusaoColuna(coluna);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Excluir'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, nomeController.text),
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (resultado != null && resultado.trim().isNotEmpty) {
+      try {
+        await _colunaService.editar(coluna.id, resultado.trim());
+        setState(() {
+          _detalheFuture = _quadroService.verDetalhes(widget.quadroId);
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$e'.replaceAll('Exception: ', ''))),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _confirmarExclusaoColuna(Coluna coluna) async {
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Excluir coluna'),
+          content: Text(
+            'Tem certeza que deseja excluir "${coluna.nome}"? Todos os cartões dela também serão excluídos.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmou == true) {
+      try {
+        await _colunaService.excluir(coluna.id);
+        setState(() {
+          _detalheFuture = _quadroService.verDetalhes(widget.quadroId);
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$e'.replaceAll('Exception: ', ''))),
+          );
+        }
+      }
+    }
+  }
+  Future<void> _confirmarExclusaoCartao(Cartao cartao) async {
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Excluir cartão'),
+          content: Text('Tem certeza que deseja excluir "${cartao.titulo}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmou == true) {
+      try {
+        await _cartaoService.excluir(cartao.id);
         setState(() {
           _detalheFuture = _quadroService.verDetalhes(widget.quadroId);
         });
@@ -207,11 +343,14 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          colunaComCartoes.coluna.nome,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        GestureDetector(
+                          onTap: () => _abrirDialogoEditarColuna(colunaComCartoes.coluna),
+                          child: Text(
+                            colunaComCartoes.coluna.nome,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
