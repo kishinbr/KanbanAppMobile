@@ -429,7 +429,7 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
   }
   
   
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder<QuadroDetalhe>(
@@ -501,7 +501,7 @@ class _VerQuadroScreenState extends State<VerQuadroScreen> {
                       }
                     },
                     builder: (context, candidateData, rejectedData) {
-                      final destacado = candidateData.isNotEmpty;
+
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     child: Padding(

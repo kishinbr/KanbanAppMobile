@@ -199,6 +199,7 @@ class _PainelScreenState extends State<PainelScreen> {
         tooltip: 'Criar novo Kanban',
         child: const Icon(Icons.add),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

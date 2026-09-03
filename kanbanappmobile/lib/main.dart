@@ -16,7 +16,7 @@ class KanbanApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.cyan,
+          seedColor: const Color.fromARGB(255, 21, 0, 212),
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
