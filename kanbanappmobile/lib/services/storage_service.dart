@@ -29,6 +29,18 @@ class StorageService {
     return prefs.getString(_chaveNome);
   }
 
+  Future<int?> obterUsuarioId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_chaveUsuarioId);
+  }
+
+  /// Usado pelos serviços locais no lugar do token JWT.
+  Future<int> exigirUsuarioId() async {
+    final id = await obterUsuarioId();
+    if (id == null) throw Exception('Sessão expirada, faça login novamente');
+    return id;
+  }
+
   Future<void> limparSessao() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();

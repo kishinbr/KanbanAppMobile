@@ -1,46 +1,48 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:crypto/crypto.dart';
+import 'package:sqflite/sqflite.dart';
 import '../models/usuario.dart';
+import 'database_service.dart';
 
 class AuthService {
-  // static const String baseUrl = 'http://10.0.2.2:8080/api/auth';
-  static const String baseUrl = 'https://kanban-app.bluewave-06d366a7.chilecentral.azurecontainerapps.io/api/auth';
+  String _hash(String senha) => sha256.convert(utf8.encode(senha)).toString();
 
   Future<Usuario> login(String email, String senha) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'senha': senha,
-      }),
+    final db = await DatabaseService.instance.db;
+    final rows = await db.query(
+      'usuarios',
+      where: 'email = ? AND senha_hash = ?',
+      whereArgs: [email.trim().toLowerCase(), _hash(senha)],
     );
 
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return Usuario.fromJson(json);
-    } else {
+    if (rows.isEmpty) {
       throw Exception('Email ou senha inválidos');
     }
+    final u = rows.first;
+    return Usuario(
+      id: u['id'] as int,
+      nome: u['nome'] as String,
+      email: u['email'] as String,
+      // Sem servidor não existe JWT; o "token" passa a ser só o id do usuário.
+      token: '${u['id']}',
+    );
   }
 
   Future<Usuario> cadastro(String nome, String email, String senha) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/cadastro'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final db = await DatabaseService.instance.db;
+    final emailNormalizado = email.trim().toLowerCase();
+    try {
+      final id = await db.insert('usuarios', {
         'nome': nome,
-        'email': email,
-        'senha': senha,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return Usuario.fromJson(json);
-    } else {
-      final json = jsonDecode(response.body);
-      throw Exception(json['mensagem'] ?? 'Erro ao cadastrar');
+        'email': emailNormalizado,
+        'senha_hash': _hash(senha),
+      });
+      return Usuario(id: id, nome: nome, email: emailNormalizado, token: '$id');
+    } on DatabaseException catch (e) {
+      if (e.isUniqueConstraintError()) {
+        throw Exception('Este email já está cadastrado');
+      }
+      throw Exception('Erro ao cadastrar');
     }
   }
 }

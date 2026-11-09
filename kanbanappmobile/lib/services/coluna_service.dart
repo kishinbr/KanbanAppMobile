@@ -1,63 +1,42 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'database_service.dart';
 import 'storage_service.dart';
 
 class ColunaService {
-  static const String baseUrl =
-      'https://kanban-app.bluewave-06d366a7.chilecentral.azurecontainerapps.io/api/colunas';
-
   final _storageService = StorageService();
 
+  Future<void> _exigirDonoDoQuadro(int quadroId) async {
+    final usuarioId = await _storageService.exigirUsuarioId();
+    final db = await DatabaseService.instance.db;
+    final rows = await db.query('membros',
+        where: "quadro_id = ? AND usuario_id = ? AND papel = 'dono'",
+        whereArgs: [quadroId, usuarioId]);
+    if (rows.isEmpty) throw Exception('Apenas o dono pode editar o kanban');
+  }
+
+  Future<int> _quadroDaColuna(int colunaId) async {
+    final db = await DatabaseService.instance.db;
+    final rows = await db.query('colunas',
+        columns: ['quadro_id'], where: 'id = ?', whereArgs: [colunaId]);
+    if (rows.isEmpty) throw Exception('Coluna não encontrada');
+    return rows.first['quadro_id'] as int;
+  }
+
   Future<int> criar(int quadroId, String nome) async {
-    final token = await _storageService.obterToken();
-
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'quadroId': quadroId,
-        'nome': nome,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return json['colunaId'];
-    } else {
-      throw Exception('Erro ao criar a coluna');
-    }
+    await _exigirDonoDoQuadro(quadroId);
+    final db = await DatabaseService.instance.db;
+    return db.insert('colunas', {'quadro_id': quadroId, 'nome': nome});
   }
+
   Future<void> excluir(int colunaId) async {
-    final token = await _storageService.obterToken();
-
-    final response = await http.delete(
-      Uri.parse('$baseUrl/$colunaId'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Erro ao excluir a coluna');
-    }
+    await _exigirDonoDoQuadro(await _quadroDaColuna(colunaId));
+    final db = await DatabaseService.instance.db;
+    await db.delete('colunas', where: 'id = ?', whereArgs: [colunaId]);
   }
+
   Future<void> editar(int colunaId, String nome) async {
-    final token = await _storageService.obterToken();
-
-    final response = await http.put(
-      Uri.parse('$baseUrl/$colunaId'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'nome': nome}),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Erro ao editar a coluna');
-    }
+    await _exigirDonoDoQuadro(await _quadroDaColuna(colunaId));
+    final db = await DatabaseService.instance.db;
+    await db.update('colunas', {'nome': nome},
+        where: 'id = ?', whereArgs: [colunaId]);
   }
 }
